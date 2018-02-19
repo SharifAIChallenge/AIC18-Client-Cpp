@@ -41,11 +41,6 @@ public:
 
 private:
 
-    /**
-     * The loop to dequeue events and send them across the network
-     */
-    void event_handling_loop() noexcept;
-
     /// Authentication token to send to server
     std::string m_token;
 
@@ -57,9 +52,6 @@ private:
 
     /// The event queue holding events to send
     EventQueue m_event_queue;
-
-    /// Thread object that will run @see event_handling_loop
-    std::thread m_event_handling_thread;
 
     /// Instance of the game world
     World m_world;

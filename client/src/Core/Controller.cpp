@@ -29,8 +29,6 @@ Controller::Controller(const std::string& host, uint16_t port, const std::string
 }
 
 Controller::~Controller() {
-    if (m_event_handling_thread.joinable())
-        m_event_handling_thread.join();
     if (m_network.is_connected())
         m_network.disconnect();
 }
@@ -82,9 +80,6 @@ void Controller::run() try {
 
     m_world.set_current_turn(0);
 
-    // Start the event handling thread
-    m_event_handling_thread = std::thread(&Controller::event_handling_loop, this);
-
     while (m_network.is_connected()) {
         Logger::Get(LogLevel_TRACE) << "Waiting for turn/shutdown message" << std::endl;
 
@@ -131,39 +126,31 @@ void Controller::run() try {
 
         Logger::Get(LogLevel_DEBUG) << "Current turn is " << m_world.get_current_turn() << std::endl;
 
-        std::thread([this]{
-            constexpr size_t COMPLEX_TURN_INTERVAL = 10;
+        constexpr size_t COMPLEX_TURN_INTERVAL = 10;
 
-            int current_turn = m_world.get_current_turn();
+        if (m_world.get_current_turn() % COMPLEX_TURN_INTERVAL == 0) {
+            Logger::Get(LogLevel_DEBUG) << "Running complex turn" << std::endl;
+            m_client.complex_turn(&m_world);
+        } else {
+            Logger::Get(LogLevel_DEBUG) << "Running simple turn" << std::endl;
+            m_client.simple_turn(&m_world);
+        }
 
-            if (m_world.get_current_turn() % COMPLEX_TURN_INTERVAL == 0) {
-                Logger::Get(LogLevel_DEBUG) << "Running complex turn" << std::endl;
-                m_client.complex_turn(&m_world);
-            } else {
-                Logger::Get(LogLevel_DEBUG) << "Running simple turn" << std::endl;
-                m_client.simple_turn(&m_world);
-            }
+        while (!m_event_queue.empty()) {
+            auto message = std::move(m_event_queue.front());
+            m_network.send(message->to_string());
+            m_event_queue.pop();
+        }
 
-            Logger::Get(LogLevel_TRACE) << "Sending end message with turn = " << current_turn << std::endl;
-            m_event_queue.push(EndTurnMessage(current_turn));
-        }).detach();
+        Logger::Get(LogLevel_TRACE) << "Sending end message" << std::endl;
+        m_network.send(EndTurnMessage(m_world.get_current_turn()).to_string());
     }
 
     Logger::Get(LogLevel_INFO) << "Closing the connection" << std::endl;
-    m_event_queue.terminate();
     m_network.disconnect();
 
     Logger::Get(LogLevel_TRACE) << "Exit Controller::run" << std::endl;
 }
 catch (Json::Exception&) {
     throw ParseError("Malformed json string");
-}
-
-void Controller::event_handling_loop() noexcept {
-    while (m_network.is_connected()) {
-        auto message = m_event_queue.pop();
-        if (!message)
-            break;
-        m_network.send(message->to_string());
-    }
 }

@@ -221,37 +221,37 @@ const std::vector<StormEvent*>& World::get_storms_in_this_turn() const {
 
 void World::create_light_unit(int path_index) {
     Logger::Get(LogLevel_DEBUG) << format_string("create_light_unit(path_index=%d)", path_index) << std::endl;
-    m_event_queue.push(CreateUnitMessage(UnitType::LIGHT, path_index));
+    m_event_queue.push(make_unique<CreateUnitMessage>(UnitType::LIGHT, path_index));
 }
 
 void World::create_heavy_unit(int path_index) {
     Logger::Get(LogLevel_DEBUG) << format_string("create_heavy_unit(path_index=%d)", path_index) << std::endl;
-    m_event_queue.push(CreateUnitMessage(UnitType::HEAVY, path_index));
+    m_event_queue.push(make_unique<CreateUnitMessage>(UnitType::HEAVY, path_index));
 }
 
 void World::create_cannon_tower(int level, int x, int y) {
     Logger::Get(LogLevel_DEBUG) << format_string("create_cannon_tower(level=%d, x=%d, y=%d)", level, x, y) << std::endl;
-    m_event_queue.push(CreateTowerMessage(TowerType::CANNON, level, Point(x, y)));
+    m_event_queue.push(make_unique<CreateTowerMessage>(TowerType::CANNON, level, Point(x, y)));
 }
 
 void World::create_archer_tower(int level, int x, int y) {
     Logger::Get(LogLevel_DEBUG) << format_string("create_archer_tower(level=%d, x=%d, y=%d)", level, x, y) << std::endl;
-    m_event_queue.push(CreateTowerMessage(TowerType::ARCHER, level, Point(x, y)));
+    m_event_queue.push(make_unique<CreateTowerMessage>(TowerType::ARCHER, level, Point(x, y)));
 }
 
 void World::upgrade_tower(Tower* tower) {
     Logger::Get(LogLevel_DEBUG) << format_string("upgrade_tower(tower_id=%d)", tower->get_id()) << std::endl;
-    m_event_queue.push(UpgradeTowerMessage(tower));
+    m_event_queue.push(make_unique<UpgradeTowerMessage>(tower));
 }
 
 void World::plant_bean(int x, int y) {
     Logger::Get(LogLevel_DEBUG) << format_string("plant_bean(x=%d, y=%d)", x, y) << std::endl;
-    m_event_queue.push(PlantBeanMessage(Point(x, y)));
+    m_event_queue.push(make_unique<PlantBeanMessage>(Point(x, y)));
 }
 
 void World::create_storm(int x, int y) {
     Logger::Get(LogLevel_DEBUG) << format_string("create_storm(x=%d, y=%d)", x, y) << std::endl;
-    m_event_queue.push(CreateStormMessage(Point(x, y)));
+    m_event_queue.push(make_unique<CreateStormMessage>(Point(x, y)));
 }
 
 int World::INITIAL_HEALTH = 0;
